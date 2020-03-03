@@ -3,3 +3,7 @@ idea
 ./idea
 .vs
 vs
+Crypto.NET/obj
+Crypto.NET/bin
+bin
+obj
