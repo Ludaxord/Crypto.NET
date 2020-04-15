@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Crypto.NET.Helpers;
 using Crypto.NET.Objects;
@@ -12,14 +13,15 @@ namespace Crypto.NET{
         string GenerateCryptoHash(string message, int type);
         string GenerateGenericHash(string message, string key, int bytes);
 
-        string GenerateGenericHashWithSalt(string message, string key, string salt, byte[] saltBytes, string personal,
+        string GenerateGenericHashWithSalt(string message, string key, string salt, byte[] keyBytes, byte[] saltBytes,
+            string personal,
             int bytes = 64);
 
         string GenerateGenericKey(int bytes = 64);
         string GenerateSalt(Crypto.SaltLength length);
     }
 
-    public sealed class Crypto : ICrypto{
+    public class Crypto : ICrypto{
         public enum SaltLength{
             SaltShort = 16,
             SaltLong = 32
@@ -46,20 +48,56 @@ namespace Crypto.NET{
             var hashSha = GenerateCryptoHash(message, 0);
             var hashSha256 = GenerateCryptoHash(message, 256);
             var hashSha512 = GenerateCryptoHash(message, 512);
+            var hashBCrypt = GenerateCryptoHash(message, 2);
             var additionalData = new Dictionary<string, string>(){
                 {"key", key},
                 {"salt", salt},
                 {"hashing_message", message}
             };
+            //TODO: add bcrypt to hashes
             var hash = EncodeCrossHash(new[]{tag, hashSha, hashSha256, hashSha512}, additionalData, difficulty,
                 asBase64);
 
             return hash;
         }
 
-        public Hash GenerateDecodedAuthHash(string crossHash){
+        public Hash GenerateDecodedAuthHash(string crossHash, string password = null, string passwordSalt = null,
+            string passwordKey = null){
             var hash = DecodeCrossHash(crossHash);
+            if (password != null){
+                hash.HashingMessage = password;
+                hash.Salt = passwordSalt;
+                hash.Key = passwordKey;
+                hash.Verified = VerifyDecodedAuthHashByPassword(hash);
+            }
+            else{
+                hash = new Hash{Token = crossHash, Verified = false};
+            }
+
             return hash;
+        }
+
+        private bool VerifyDecodedAuthHashByPassword(Hash hash){
+            var verifications = new List<bool>();
+            var options = new List<int>{0, 1, 256, 512};
+            foreach (var h in hash.Hashes){
+                try{
+                    verifications.AddRange(options
+                        .Select(option => GenerateCryptoByte(hash.HashingMessage, hash.Key, hash.Salt, option))
+                        .Where(hmacSha => hmacSha != null)
+                        .Select(hmacSha => hmacSha.EncodeByteArray() == h)
+                        .Where(sameValues => sameValues)
+                        .Select(sameValues => true));
+                }
+                catch (Exception e){
+                    // ConsoleExtended.WriteColorLine($"EXCEPTION: {e}");
+                }
+            }
+
+            var verified = verifications.Any() && hash.Hashes.Count == verifications.Count &&
+                           verifications.All(item => item);
+
+            return verified;
         }
 
         public void TestCrypto(int iterations = 100){
@@ -113,7 +151,7 @@ namespace Crypto.NET{
             }
         }
 
-        private string GenerateRandomMessage(int length){
+        public string GenerateRandomMessage(int length){
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
                 .Select(s => s[_random.Next(s.Length)]).ToArray());
@@ -315,19 +353,25 @@ namespace Crypto.NET{
         }
 
         public string GenerateGenericHashWithSalt(string message, string key, string salt = null,
+            byte[] keyBytes = null,
             byte[] saltBytes = null,
-            string personal = "crypto_lib_user_",
+            string personal = "crypto_lib_user_ssssssssssssssss",
             int bytes = 64){
             if (salt == null && saltBytes == null){
                 saltBytes = GenerateSaltBytes(SaltLength.SaltShort);
             }
 
             if (salt != null){
-                saltBytes = salt.EncodeToByteArray();
+                saltBytes = salt.ToByteArray();
             }
 
-            var hash = GenericHash.HashSaltPersonal(message.EncodeToByteArray(), key.EncodeToByteArray(), saltBytes,
-                personal.EncodeToByteArray(), bytes);
+            if (key != null){
+                keyBytes = key.ToByteArray();
+            }
+
+            var hash = GenericHash.HashSaltPersonal(message.ToByteArray(), keyBytes, saltBytes, personal.ToByteArray(),
+                bytes);
+
             return hash.EncodeByteArray();
         }
 
@@ -339,20 +383,66 @@ namespace Crypto.NET{
         }
 
         public string GenerateCryptoHash(string message, int type = 0){
+            HashAlgorithm algorithm;
             switch (type){
                 case 256:
-                    var sha256 = CryptoHash.Sha256(message);
-                    return sha256.EncodeByteArray();
+                    algorithm = new SHA256Managed();
+                    break;
                 case 512:
-                    var sha512 = CryptoHash.Sha512(message);
-                    return sha512.EncodeByteArray();
+                    algorithm = new SHA512Managed();
+                    break;
                 case 0:
-                    var shaHash = CryptoHash.Hash(message);
-                    return shaHash.EncodeByteArray();
+                    algorithm = new SHA1Managed();
+                    break;
                 default:
-                    var shaDefault = CryptoHash.Hash(message);
-                    return shaDefault.EncodeByteArray();
+                    algorithm = new MD5CryptoServiceProvider();
+                    break;
             }
+
+            if (type == 2){
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(message);
+                return passwordHash;
+            }
+
+            var hash = algorithm.ComputeHash(message.ToByteArray()).EncodeByteArray();
+            return hash;
+        }
+
+        private bool VerifyBCryptPassword(string password, string bCryptHash){
+            var verification = BCrypt.Net.BCrypt.Verify(password, bCryptHash);
+            return verification;
+        }
+
+        private byte[] GenerateCryptoByte(string message, string key, string salt, int type = 0){
+            HashAlgorithm algorithm;
+            switch (type){
+                case 256:
+                    algorithm = new SHA256Managed();
+                    break;
+                case 512:
+                    algorithm = new SHA512Managed();
+                    break;
+                case 0:
+                    algorithm = new SHA1Managed();
+                    break;
+                default:
+                    algorithm = new MD5CryptoServiceProvider();
+                    break;
+            }
+
+            if (type == 1){
+                try{
+                    return GenerateGenericHashWithSalt(message, key, saltBytes: salt.ToByteArray())
+                        .ToByteArray();
+                }
+                catch (Exception e){
+                    ConsoleExtended.WriteColorLine($"type {type} exception {e}");
+                    return null;
+                }
+            }
+
+            var hash = algorithm.ComputeHash(message.ToByteArray());
+            return hash;
         }
     }
 }

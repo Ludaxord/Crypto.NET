@@ -9,6 +9,7 @@ namespace Crypto.NET.Objects{
         public List<int> DifficultiesList;
         public int HashesObjectsLength;
         public List<int> HashesLengthList;
+        public bool Verified;
         public string Salt;
         public string Key;
         public string HashingMessage;
