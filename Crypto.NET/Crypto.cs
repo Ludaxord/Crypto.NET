@@ -10,83 +10,83 @@ using Sodium;
 
 namespace Crypto.NET{
     /// <summary>
-    /// 
+    /// ICrypto - Interface for crypto library
     /// </summary>
     public interface ICrypto{
         /// <summary>
-        /// 
+        /// GenerateCryptoHash - Creating hash by type of hashing method
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="message">Message that is going to be hashed</param>
+        /// <param name="type">Type of hashing method</param>
+        /// <returns>hashed message</returns>
         string GenerateCryptoHash(string message, int type);
 
         /// <summary>
-        /// 
+        /// GenerateGenericHash - Creating hash using GenericHash from libsodium  
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="key"></param>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <param name="message">Message that is going to be hashed</param>
+        /// <param name="key">Key for hashing message</param>
+        /// <param name="bytes">Number of bytes</param>
+        /// <returns>hashed message</returns>
         string GenerateGenericHash(string message, string key, int bytes);
 
         /// <summary>
-        /// 
+        /// GenerateGenericHashWithSalt - Creating hash using GenericHash from libsodium  
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="key"></param>
-        /// <param name="salt"></param>
-        /// <param name="keyBytes"></param>
-        /// <param name="saltBytes"></param>
-        /// <param name="personal"></param>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <param name="message">Message that is going to be hashed</param>
+        /// <param name="key">Key for hashing message</param>
+        /// <param name="salt">Optional: Salt for hashing message</param>
+        /// <param name="keyBytes">Key bytes for hashing message</param>
+        /// <param name="saltBytes">Optional: Salt bytes for hashing message</param>
+        /// <param name="personal">constant personal message</param>
+        /// <param name="bytes">Number of bytes</param>
+        /// <returns>hashed message</returns>
         string GenerateGenericHashWithSalt(string message, string key, string salt, byte[] keyBytes, byte[] saltBytes,
             string personal,
             int bytes = 64);
 
         /// <summary>
-        /// 
+        /// GenerateGenericKey - Generate key based on libsodium methods
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <param name="bytes">bytes of key</param>
+        /// <returns>return key</returns>
         string GenerateGenericKey(int bytes = 64);
 
         /// <summary>
-        /// 
+        /// GenerateSalt - Creating salt of hashing message
         /// </summary>
-        /// <param name="length"></param>
-        /// <returns></returns>
+        /// <param name="length">Length of hash possible: SaltLong - 32, SaltShort - 16</param>
+        /// <returns>Salt as string</returns>
         string GenerateSalt(Crypto.SaltLength length);
     }
 
     /// <summary>
-    /// 
+    /// Crypto - Library for hashing messages. 
     /// </summary>
     public class Crypto : ICrypto{
         /// <summary>
-        /// 
+        /// SaltLength - Enum to switch between salt lengths
         /// </summary>
         public enum SaltLength{
             /// <summary>
-            /// 
+            /// Short Salt of length 16
             /// </summary>
             SaltShort = 16,
 
             /// <summary>
-            /// 
+            /// Long Salt of length 32
             /// </summary>
             SaltLong = 32
         }
 
 
         /// <summary>
-        /// 
+        /// GenerateEncodedAuthHash - Main method to create Hash object with all hashed properties like: CrossHash
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="difficulty"></param>
-        /// <param name="asBase64"></param>
-        /// <returns></returns>
+        /// <param name="message">Message to hash</param>
+        /// <param name="difficulty">Difficulty of crossHash</param>
+        /// <param name="asBase64">bool to change if crossHash has to be changed to Base64</param>
+        /// <returns>Hash object with CrossHash - hashed message</returns>
         public Hash GenerateEncodedAuthHash(string message = null, int difficulty = 0, bool asBase64 = true){
             if (message == null){
                 message = GenerateRandomMessage(20);
@@ -110,13 +110,13 @@ namespace Crypto.NET{
         }
 
         /// <summary>
-        /// 
+        /// GenerateDecodedAuthHash - Verify crossHash
         /// </summary>
-        /// <param name="crossHash"></param>
-        /// <param name="password"></param>
-        /// <param name="passwordSalt"></param>
-        /// <param name="passwordKey"></param>
-        /// <returns></returns>
+        /// <param name="crossHash">hashed message with crossHash method</param>
+        /// <param name="password">Encoded message</param>
+        /// <param name="passwordSalt">Encoded message salt</param>
+        /// <param name="passwordKey">Encoded message key</param>
+        /// <returns>Hash object with information about verification result</returns>
         public Hash GenerateDecodedAuthHash(string crossHash, string password = null, string passwordSalt = null,
             string passwordKey = null){
             var hash = DecodeCrossHash(crossHash);
@@ -134,10 +134,10 @@ namespace Crypto.NET{
         }
 
         /// <summary>
-        /// 
+        /// GenerateRandomMessage - Generating random message
         /// </summary>
-        /// <param name="length"></param>
-        /// <returns></returns>
+        /// <param name="length">length of random message</param>
+        /// <returns>Random message of given length</returns>
         public string GenerateRandomMessage(int length){
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
@@ -146,10 +146,10 @@ namespace Crypto.NET{
 
 
         /// <summary>
-        /// 
+        /// GenerateGenericKey - Generate key based on libsodium methods
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <param name="bytes">bytes of key</param>
+        /// <returns>return key</returns>
         public string GenerateGenericKey(int bytes = 64){
             if (bytes == 64){
                 var key = GenericHash.GenerateKey();
@@ -162,28 +162,28 @@ namespace Crypto.NET{
         }
 
         /// <summary>
-        /// 
+        /// GenerateGenericHash - Creating hash using GenericHash from libsodium  
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="key"></param>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <param name="message">Message that is going to be hashed</param>
+        /// <param name="key">Key for hashing message</param>
+        /// <param name="bytes">Number of bytes</param>
+        /// <returns>hashed message</returns>
         public string GenerateGenericHash(string message, string key, int bytes = 64){
             var hash = GenericHash.Hash(message, key, bytes);
             return hash.EncodeByteArray();
         }
 
         /// <summary>
-        /// 
+        /// GenerateGenericHashWithSalt - Creating hash using GenericHash from libsodium  
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="key"></param>
-        /// <param name="salt"></param>
-        /// <param name="keyBytes"></param>
-        /// <param name="saltBytes"></param>
-        /// <param name="personal"></param>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <param name="message">Message that is going to be hashed</param>
+        /// <param name="key">Key for hashing message</param>
+        /// <param name="salt">Optional: Salt for hashing message</param>
+        /// <param name="keyBytes">Key bytes for hashing message</param>
+        /// <param name="saltBytes">Optional: Salt bytes for hashing message</param>
+        /// <param name="personal">constant personal message</param>
+        /// <param name="bytes">Number of bytes</param>
+        /// <returns>hashed message</returns>
         public string GenerateGenericHashWithSalt(string message, string key, string salt = null,
             byte[] keyBytes = null,
             byte[] saltBytes = null,
@@ -208,10 +208,10 @@ namespace Crypto.NET{
         }
 
         /// <summary>
-        /// 
+        /// GenerateSalt - Creating salt of hashing message
         /// </summary>
-        /// <param name="length"></param>
-        /// <returns></returns>
+        /// <param name="length">Length of hash possible: SaltLong - 32, SaltShort - 16</param>
+        /// <returns>Salt as string</returns>
         public string GenerateSalt(SaltLength length = SaltLength.SaltLong){
             var salt = length == SaltLength.SaltLong
                 ? PasswordHash.ScryptGenerateSalt()
@@ -220,11 +220,11 @@ namespace Crypto.NET{
         }
 
         /// <summary>
-        /// 
+        /// GenerateCryptoHash - Creating hash by type of hashing method
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="message">Message that is going to be hashed</param>
+        /// <param name="type">Type of hashing method, possible: default - MD5, 0 - Sha1, 2 - BCrypt (Experimental), 256 - Sha256, 512 - Sha512</param>
+        /// <returns>Hashed message</returns>
         public string GenerateCryptoHash(string message, int type = 0){
             HashAlgorithm algorithm;
             switch (type){
