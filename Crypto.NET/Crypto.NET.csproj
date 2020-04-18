@@ -3,11 +3,19 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp2.2</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Copyright>Konrad Uciechowski</Copyright>
+        <PackageProjectUrl>https://github.com/Ludaxord/Crypto.NET</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Ludaxord/Crypto.NET</RepositoryUrl>
+        <PackageTags>cryptography, libsodium, c-sharp</PackageTags>
+        <Title>Crypto.NET</Title>
+        <Authors>Konrad Uciechowski</Authors>
+        <RepositoryType>Open Source</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BCrypt.Net-Next" Version="3.2.1"/>
-        <PackageReference Include="Sodium.Core" Version="1.2.1"/>
+        <PackageReference Include="BCrypt.Net-Next" Version="3.2.1" />
+        <PackageReference Include="Sodium.Core" Version="1.2.1" />
     </ItemGroup>
 
 </Project>
